@@ -3,7 +3,6 @@
 @section('title','Invoice')
 <div class="card">
     <div class="card-body">
-        <h4 class="mb-3">Invoice | {{ $penjualan->tanggal_penjualan }}</h4>
         <div class="row">
             <div class="col-md-4">
                 <h6>From :</h6> 
