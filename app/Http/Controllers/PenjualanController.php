@@ -123,42 +123,60 @@ class PenjualanController extends Controller
        
     }
     public function report($kode_penjualan) {
-        TCPDF::SetTitle('Struk Pembayaran Kasir Sanjaya '); 
+        $penjualan = DB::table('penjualans as a')
+        ->leftJoin('pelanggans as b', 'a.pelanggan_id','=','b.pelanggan_id')
+        ->where('a.kode_penjualan',$kode_penjualan)
+        ->orderBy('tanggal_penjualan','DESC')
+        ->first();
+        
+        
+        $detail     = DB::table('detail_penjualans as a')
+        ->leftJoin('produks as b', 'a.produk_id', '=','b.produk_id')
+        ->where('kode_penjualan',$kode_penjualan)
+        ->get();
+        
+        TCPDF::SetTitle('Invoice | '.$penjualan->kode_penjualan); 
         TCPDF::AddPage(); 
         TCPDF::SetFont('helvetica', 'B', 12);
-        TCPDF::Cell(0, 10, 'Struk Pembayaran Kasir Sanjaya', 0, 1, 'L');
+        TCPDF::Cell(0, 10, '                    Toserba Sanjaya', 0, 1, 'L');
         
-        $penjualan = DB::table('penjualans as a')
-                    ->leftJoin('pelanggans as b', 'a.pelanggan_id','=','b.pelanggan_id')
-                    ->where('a.kode_penjualan',$kode_penjualan)
-                    ->orderBy('tanggal_penjualan','DESC')
-                    ->first();
-
-
-        $detail     = DB::table('detail_penjualans as a')
-                    ->leftJoin('produks as b', 'a.produk_id', '=','b.produk_id')
-                    ->where('kode_penjualan',$kode_penjualan)
-                    ->get();
-       
         
         TCPDF::SetFont('helvetica', '', 10);
-        TCPDF::Cell(0, 14, '# ' . $penjualan->kode_penjualan, 0, 1, 'L'); 
-        TCPDF::Cell(0, 10, 'Kasir: Sanjaya | ' . $penjualan->tanggal_penjualan, 0, 1, 'L');
-        TCPDF::Cell(0, 10, '=============================', 0, 1, 'L');
-        
-        foreach ($detail as $index => $item) {
-            TCPDF::Cell(0, 10, 'Kode Produk: ' . $item->kode_penjualan, 0, 1, 'L');
-            TCPDF::Cell(0, 10, 'Nama Produk: ' . $item->nama_produk, 0, 1, 'L');
-            TCPDF::Cell(0, 10, 'Harga: ' . $item->harga, 0, 1, 'L');
-            TCPDF::Cell(0, 10, 'Jumlah: ' . $item->jumlah_produk, 0, 1, 'L');
-            TCPDF::Cell(0, 10, 'Subtotal: ' . $item->jumlah_produk * $item->harga, 0, 1, 'L');
-            TCPDF::Cell(0, 10, '-------------------------------------------------', 0, 1, 'L');
+        TCPDF::Cell(0, 10, '                                   Pusat' ,0, 1, 'L'); 
+        TCPDF::Cell(0, 10, 'Jl . Lawu Simpanglima, Lampu merah, Bejen, Kra ' ,0, 1, 'L'); 
+        TCPDF::Cell(0, 10, '           HP. 089672284196 / 087654228109 ' ,0, 1, 'L'); 
+        TCPDF::Cell(0, 10, '======================================', 0, 1, 'L');
+
+        TCPDF::Cell(0, 7, $penjualan->tanggal_penjualan .'                                             #'.$penjualan->kode_penjualan, 0, 1, 'L');
+        TCPDF::Cell(0, 7, 'User            : ' . auth()->user()->username, 0, 1, 'L');
+        TCPDF::Cell(0, 7, 'Pelanggan  : ' . $penjualan->nama_pelanggan, 0, 1, 'L');
+
+
+        TCPDF::Cell(0,  5, '-------------------------------------------------------------------' , 0, 1, 'L');
+        TCPDF::Cell(10, 7, 'No', 0, 0, 'L');
+        TCPDF::Cell(20, 7, 'Kd Brg', 0, 0, 'L'); 
+        TCPDF::Cell(10, 7, 'Qty', 0, 0, 'L'); 
+        TCPDF::Cell(25, 7, 'Harga', 0, 0, 'L'); 
+        TCPDF::Cell(30, 7, 'Subtotal', 0, 0, 'L');
+        TCPDF::Cell(0,  7, '', 0, 1, 'L');
+        TCPDF::Cell(0,  7, '-------------------------------------------------------------------' , 0, 1, 'L');
+
+        $no = 1;
+        foreach ($detail as $detail) {
+            TCPDF::Cell(10, 7, $no++, 0, 0, 'L');
+            TCPDF::Cell(20, 7, $detail->kode_produk, 0, 0, 'L'); 
+            TCPDF::Cell(10, 7, $detail->jumlah_produk, 0, 0, 'L'); 
+            TCPDF::Cell(25, 7, $detail->harga, 0, 0, 'L'); 
+            TCPDF::Cell(30, 7, $detail->harga * $detail->jumlah_produk, 0, 0, 'L');
+            TCPDF::Cell(0, 7, '', 0, 1, 'L'); 
+            TCPDF::Cell(0, 7, 'Brg  : ' . $detail->nama_produk, 0, 1, 'L');
         }
-        
-        TCPDF::Cell(0, 10, 'Total Harga: ' . $penjualan->total_harga, 0, 1, 'L');
-        TCPDF::Cell(0, 10, 'Nominal Pembayaran: ' .$penjualan->pembayaran, 0, 1, 'L');
-        TCPDF::Cell(0, 10, 'Kembalian: ' . $penjualan->pembayaran - $penjualan->total_harga, 0, 1, 'L');
-        
+        TCPDF::Cell(0, 0, '', 0, 1, 'L'); 
+        TCPDF::Cell(0, 7, '======================================', 0, 1, 'L');
+        TCPDF::Cell(0, 7, 'Total      :  Rp. ' . number_format($penjualan->total_harga), 0, 1, 'L');
+        TCPDF::Cell(0, 7, 'Bayar     :  Rp. ' .number_format($penjualan->pembayaran), 0, 1, 'L');
+        TCPDF::Cell(0, 7, 'Kembali  :  Rp. ' . number_format($penjualan->pembayaran - $penjualan->total_harga), 0, 1, 'L');
+
         TCPDF::Output('invoice.pdf', 'I');
     }
 }
